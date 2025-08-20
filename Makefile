@@ -1,4 +1,4 @@
-.PHONY: dev fmt lint test audit deny check help db-up db-down
+.PHONY: dev fmt lint test audit deny check help db-up db-down db-health db-wait
 
 # Default target
 all: check
@@ -56,6 +56,14 @@ db-up:
 db-down:
 	docker compose stop postgres
 
+# Check database health (exit 0 if healthy)
+db-health:
+	./scripts/db-health.sh check
+
+# Wait for database to become healthy (honors DB_WAIT_TIMEOUT)
+db-wait:
+	./scripts/db-health.sh wait
+
 # Show help
 help:
 	@echo "Available targets:"
@@ -72,4 +80,6 @@ help:
 	@echo "  release      - Build optimized release version"
 	@echo "  db-up        - Start PostgreSQL container (docker compose)"
 	@echo "  db-down      - Stop PostgreSQL container"
+	@echo "  db-health    - Check PostgreSQL health (pg_isready/psql)"
+	@echo "  db-wait      - Wait for PostgreSQL to become healthy"
 	@echo "  help         - Show this help message"
