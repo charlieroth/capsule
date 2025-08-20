@@ -1,4 +1,4 @@
-.PHONY: dev fmt lint test audit deny check help
+.PHONY: dev fmt lint test audit deny check help db-up db-down
 
 # Default target
 all: check
@@ -48,6 +48,14 @@ build:
 release:
 	cargo build --release
 
+# Start PostgreSQL service via docker compose
+db-up:
+	docker compose up -d postgres
+
+# Stop PostgreSQL service
+db-down:
+	docker compose stop postgres
+
 # Show help
 help:
 	@echo "Available targets:"
@@ -62,4 +70,6 @@ help:
 	@echo "  clean        - Clean build artifacts"
 	@echo "  build        - Build the project"
 	@echo "  release      - Build optimized release version"
+	@echo "  db-up        - Start PostgreSQL container (docker compose)"
+	@echo "  db-down      - Stop PostgreSQL container"
 	@echo "  help         - Show this help message"
