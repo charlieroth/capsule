@@ -1,3 +1,6 @@
+use capsule::config;
+
 fn main() {
-    println!("capsule");
+    let config = config::Config::from_env().expect("Failed to load configuration");
+    println!("config: {:?}", config);
 }

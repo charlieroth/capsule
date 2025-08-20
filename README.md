@@ -61,3 +61,36 @@ I have the following roadmap for `v0.1.0`:
 - Read-it-later browser extension (`POST` to API)
 - RSS import, EPUB export
 - Per-user encryption at rest (key per user)
+
+## Local Database Health Check
+
+The project includes a simple PostgreSQL health check script for local development.
+
+Usage:
+
+```
+make db-up          # start postgres (docker compose)
+make db-health      # check if the database is accepting connections
+make db-wait        # block until the database is healthy (with timeout)
+```
+
+You can also invoke the script directly:
+
+```
+./scripts/db-health.sh check
+./scripts/db-health.sh wait
+```
+
+Environment overrides (defaults in parentheses):
+
+```
+PGHOST (localhost)
+PGPORT (5432)
+PGUSER (capsule)
+PGPASSWORD (capsule_password)
+PGDATABASE (capsule_dev)
+DB_WAIT_TIMEOUT (30)   # seconds total before giving up in wait mode
+DB_WAIT_INTERVAL (2)   # seconds between retries
+```
+
+The script prefers `pg_isready`; if unavailable, it falls back to a trivial `SELECT 1` via `psql`.
