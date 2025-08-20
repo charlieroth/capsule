@@ -1,4 +1,4 @@
-.PHONY: dev fmt lint test audit deny check help db-up db-down db-health db-wait db-migrate db-reset db-logs install-tools prepare
+.PHONY: dev fmt lint test audit deny check help db-up db-down db-health db-wait db-migrate db-reset db-logs install-tools prepare erd
 
 DB_URL ?= postgres://capsule:capsule_password@localhost:5432/capsule_dev
 export DATABASE_URL := $(DB_URL)
@@ -92,6 +92,10 @@ prepare:
 # --- Database Helpers ---
 pgcli:
 	pgcli $(DB_URL)
+
+erd: db-up db-wait
+	docker compose run --rm schemaspy
+	@echo "Open ./erd/index.html"
 
 # Show help
 help:

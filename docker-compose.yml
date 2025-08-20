@@ -44,6 +44,15 @@ services:
     restart: unless-stopped
     command: ["/app/capsule-api"]
 
+  schemaspy:
+    image: schemaspy/schemaspy:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["-configFile", "/schemaspy.properties"]
+    volumes:
+      - ./erd:/output
+      - ./schemaspy.properties:/schemaspy.properties:ro
 
 volumes:
   db_data:
