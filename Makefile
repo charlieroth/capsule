@@ -1,4 +1,7 @@
-.PHONY: dev fmt lint test audit deny check help db-up db-down db-health db-wait
+.PHONY: dev fmt lint test audit deny check help db-up db-down db-health db-wait db-migrate db-reset db-logs install-tools prepare erd
+
+DB_URL ?= postgres://capsule:capsule_password@localhost:5432/capsule_dev
+export DATABASE_URL := $(DB_URL)
 
 # Default target
 all: check
@@ -35,6 +38,7 @@ check: fmt lint test audit deny
 install-tools:
 	cargo install cargo-audit
 	cargo install cargo-deny
+	cargo install sqlx-cli --no-default-features --features native-tls,postgres
 
 # Clean build artifacts
 clean:
@@ -47,6 +51,8 @@ build:
 # Build optimized release version
 release:
 	cargo build --release
+
+# --- Database lifecycle ---
 
 # Start PostgreSQL service via docker compose
 db-up:
@@ -64,22 +70,53 @@ db-health:
 db-wait:
 	./scripts/db-health.sh wait
 
+# Run sqlx migrations against running container
+db-migrate: db-wait
+	sqlx migrate run
+
+# Nuke volume and recreate DB, then migrate
+db-reset:
+	docker compose down -v
+	docker compose up -d postgres
+	$(MAKE) db-wait
+	sqlx migrate run
+
+# Tail postgres logs
+db-logs:
+	docker compose logs -f postgres
+
+# Keep sqlx offline metadata up to date (optional but recommended)
+prepare:
+	cargo sqlx prepare --workspace -- --all-features
+
+# --- Database Helpers ---
+pgcli:
+	pgcli $(DB_URL)
+
+erd: db-up db-wait
+	docker compose run --rm schemaspy
+	@echo "Open ./erd/index.html"
+
 # Show help
 help:
 	@echo "Available targets:"
-	@echo "  dev          - Run the project in development mode"
-	@echo "  fmt          - Format code using rustfmt"
-	@echo "  lint         - Lint code using clippy"
-	@echo "  test         - Run tests"
-	@echo "  audit        - Security audit using cargo-audit"
-	@echo "  deny         - Check for banned dependencies using cargo-deny"
-	@echo "  check        - Run all checks (fmt, lint, test, audit, deny)"
-	@echo "  install-tools- Install required tools (cargo-audit, cargo-deny)"
-	@echo "  clean        - Clean build artifacts"
-	@echo "  build        - Build the project"
-	@echo "  release      - Build optimized release version"
-	@echo "  db-up        - Start PostgreSQL container (docker compose)"
-	@echo "  db-down      - Stop PostgreSQL container"
-	@echo "  db-health    - Check PostgreSQL health (pg_isready/psql)"
-	@echo "  db-wait      - Wait for PostgreSQL to become healthy"
-	@echo "  help         - Show this help message"
+	@echo "  dev           - Run the project in development mode"
+	@echo "  fmt           - Format code using rustfmt"
+	@echo "  lint          - Lint code using clippy"
+	@echo "  test          - Run tests"
+	@echo "  audit         - Security audit using cargo-audit"
+	@echo "  deny          - Check for banned dependencies using cargo-deny"
+	@echo "  check         - Run all checks (fmt, lint, test, audit, deny)"
+	@echo "  install-tools - Install required tools (cargo-audit, cargo-deny, sqlx-cli)"
+	@echo "  clean         - Clean build artifacts"
+	@echo "  build         - Build the project"
+	@echo "  release       - Build optimized release version"
+	@echo "  db-up         - Start PostgreSQL container (docker compose)"
+	@echo "  db-down       - Stop PostgreSQL container"
+	@echo "  db-health     - Check PostgreSQL health (pg_isready/psql)"
+	@echo "  db-wait       - Wait for PostgreSQL to become healthy"
+	@echo "  db-migrate    - Run database migrations with sqlx"
+	@echo "  db-reset      - Drop volumes, recreate DB, run migrations"
+	@echo "  db-logs       - Tail PostgreSQL logs"
+	@echo "  prepare       - Update sqlx offline metadata (cargo sqlx prepare)"
+	@echo "  help          - Show this help message"
