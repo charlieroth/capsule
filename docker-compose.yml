@@ -21,5 +21,29 @@ services:
       retries: 5
       start_period: 10s
 
+  migrate:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://capsule:capsule_password@localhost:5432/capsule_dev
+    command: ["/app/capsule-migrate"]
+    restart: "no"
+
+  api:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgres://capsule:capsule_password@localhost:5432/capsule_dev
+    ports: ["8080:8080"]
+    restart: unless-stopped
+    command: ["/app/capsule-api"]
+
+
 volumes:
   db_data:
