@@ -1,96 +1,183 @@
-# `capsule`
+# capsule
 
-A "read later" web service, learning to build production-grade Rust web services
+A pragmatic "read later" service built in Rust to explore production-grade web service patterns:
 
-## Outcome
+- Authentication
+- Background jobs
+- Full‑text search
+- Observability
+- Robust operations
 
-The goal of this project is to build a service with the following components:
+## Features (Planned / In Progress)
 
-- REST + OpenAPI service
-- User auth
-- Background fetching
-- Full-text search
-- Tracing
-- Monitoring via Prometheus
+- REST API with generated OpenAPI docs (axum + utoipa)
+- User authentication (argon2 password hashes + JWT)
+- Background fetch & extract pipeline (reqwest + scraper)
+- Full‑text search (tantivy)
+- Structured logging & tracing (tracing) + metrics (future Prometheus endpoint)
+- Database persistence (PostgreSQL via sqlx; async, compile‑time checked queries when `make prepare` is run)
+- Schema documentation / ERD via SchemaSpy (`make erd` -> `./erd/index.html`)
 
-## Stack
+## Architecture Overview
 
-- Server: `axum`, `tokio`, `tower`, `sqlx`, `serde`, `utoipa`, `tracing`
-- Jobs: background tasks via `tokio::spawn` + `jobs` table
-- Fetch + Extract: `reqwest`, `scraper` or `kuchiki`, optional reability pass
-- Search: `tantivy` in-process
-- Auth: `argon2` password hashes, JWT (`jsonwebtoken`)
+High-level flow:
 
-## Flow
+1. Client creates an item (URL + metadata)
+2. A background task fetches & normalizes HTML, stores text content
+3. Indexer updates tantivy with (title + site + tags + text)
+4. Search endpoint returns ranked results with snippets
 
-1. Create item -> enqueue `fetch_and_extract(item_id)`
-2. Worker fetches HTML, normalizes, stores `content.text`, updates `status=finished`
-3. Indexer ingests `(title + site + tags + text)` to `tantivy`
-4. Search returns ranked hits with snippets
-
-## Non-functional
-
-Some non-functional aspects I want to include in this project are:
-
-- Timeouts, retries, circuit breaking (`tower`)
-- Graceful shutdown with in-flight drain
-- Per-user rate limits
-- PII minimization, secure cookies for web, HTTPS
-
-## Tests
-
-Different testing techniques I want to explore in this project:
-
-- Unit: extractors, parsers, auth
-- Integration: happy paths + failure modes (`5XX`, timeouts)
-- Property: URL normilization, idempotent enqueue
-- Load: 1k items user, `p95` search < 100ms on local machine
-- Fuzz: HTML extractor inputs
-
-## Roadmap
-
-I have the following roadmap for `v0.1.0`:
-
-- Milestone 1: schema, migrations, auth, skeleton routes, CI
-- Milestone 2: fetcher, extractor, jobs, content store, tracing
-- Milestone 3: `tantivy` index + search API, snippets, tags, rate limit
-- Milestone 4: hardening, docs, seed data, `Dockerfile`
-
-## Stretch Goals
-
-- Read-it-later browser extension (`POST` to API)
-- RSS import, EPUB export
-- Per-user encryption at rest (key per user)
-
-## Local Database Health Check
-
-The project includes a simple PostgreSQL health check script for local development.
-
-Usage:
+## Repository Layout
 
 ```
-make db-up          # start postgres (docker compose)
-make db-health      # check if the database is accepting connections
-make db-wait        # block until the database is healthy (with timeout)
+src/
+  bin/
+    api.rs        # HTTP server entrypoint
+    migrate.rs    # One-shot migration runner (used in Docker / local)
+  lib.rs          # (future) shared library code
+migrations/       # sqlx migrations (*.up.sql / *.down.sql)
+Makefile          # Developer workflow commands
+Dockerfile        # Multi-stage container build (api + migrate)
+docker-compose.yml# Postgres + migrate + api + schemaspy services
+scripts/db-health.sh # Wait/health checks for Postgres
+erd/              # Generated SchemaSpy output (HTML + diagrams)
+docs/PROJECT.md   # Vision, roadmap, non-functional goals
 ```
 
-You can also invoke the script directly:
+## Quick Start (Local Dev)
 
-```
-./scripts/db-health.sh check
-./scripts/db-health.sh wait
+Pre-requisites:
+
+- Rust (see `rust-toolchain.toml`)
+- Docker (for Postgres + ERD generation)
+- Run `make install-tools`
+
+Steps:
+
+```bash
+# 1. Start Postgres
+make db-up
+
+# 2. Run migrations
+make db-migrate
+
+# 3. Launch the API (defaults to 0.0.0.0:8080 via Config)
+make dev
+
+# 4. Hit the root endpoint
+curl -s localhost:8080/
 ```
 
-Environment overrides (defaults in parentheses):
+Expected response: `Hello from capsule!`
 
-```
-PGHOST (localhost)
-PGPORT (5432)
-PGUSER (capsule)
-PGPASSWORD (capsule_password)
-PGDATABASE (capsule_dev)
-DB_WAIT_TIMEOUT (30)   # seconds total before giving up in wait mode
-DB_WAIT_INTERVAL (2)   # seconds between retries
+Tear down:
+
+```bash
+make db-down
 ```
 
-The script prefers `pg_isready`; if unavailable, it falls back to a trivial `SELECT 1` via `psql`.
+Full reset (drops volume):
+
+```bash
+make db-reset
+```
+
+## Configuration
+
+`Config::from_env()` (see `config/mod.rs`) loads environment variables. Key variable:
+
+- `DATABASE_URL` (required for API & migrations) e.g. `postgres://capsule:capsule_password@localhost:5432/capsule_dev`
+
+Additional configuration knobs (future): bind address, logging level, JWT secrets, rate limits.
+
+## Database & Migrations
+
+Migrations live in `migrations/` and are executed by either:
+
+- `make db-migrate` (sqlx-cli) OR
+- The `capsule-migrate` binary (used in `docker-compose.yml` as the `migrate` service)
+
+Generate / update sqlx offline metadata (speeds up compile-time query checking):
+
+```bash
+make prepare
+```
+
+Check database health:
+
+```bash
+make db-health    # exit 0 if healthy
+make db-wait      # block until healthy (used in CI / scripts)
+```
+
+Open a psql-like shell (requires `pgcli` installed):
+
+```bash
+make pgcli
+```
+
+## Schema / ERD Docs
+
+Generate ERD & HTML docs (writes into `./erd`):
+
+```bash
+make erd
+open erd/index.html  # macOS
+```
+
+## Docker / Compose
+
+Build & run everything (Postgres + migrations + API):
+
+```bash
+docker compose up --build api
+```
+
+Services:
+
+- `postgres` (port 5432)
+- `migrate` (runs once; executes migrations then exits)
+- `api` (exposes port 8080)
+- `schemaspy` (on-demand ERD generation: `make erd`)
+
+Environment is baked with `DATABASE_URL` pointing at the compose network host.
+
+## Makefile Cheat Sheet
+
+| Target       | Purpose                          |
+| ------------ | -------------------------------- |
+| `dev`        | Run API locally (debug)          |
+| `fmt`        | Format sources                   |
+| `lint`       | Clippy (deny warnings)           |
+| `test`       | Run tests                        |
+| `audit`      | Security audit (cargo-audit)     |
+| `deny`       | Dependency policy (cargo-deny)   |
+| `check`      | fmt + lint + test + audit + deny |
+| `db-up`      | Start Postgres via Docker        |
+| `db-down`    | Stop Postgres                    |
+| `db-migrate` | Apply migrations                 |
+| `db-reset`   | Drop volume & reinit DB          |
+| `db-health`  | Health probe (fast)              |
+| `db-wait`    | Wait until healthy               |
+| `db-logs`    | Tail Postgres logs               |
+| `prepare`    | sqlx offline metadata            |
+| `erd`        | Generate ERD docs                |
+
+Install tooling once:
+
+```bash
+make install-tools
+```
+
+## Testing Strategy (Planned)
+
+- Unit tests for parsing, auth, extraction
+- Integration tests exercising HTTP routes & DB side-effects
+- Property tests (URL normalization; idempotent job enqueue)
+- Fuzzing extractor inputs
+
+Run tests:
+
+```bash
+make test
+```
