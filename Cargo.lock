@@ -278,6 +278,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "tantivy",
+ "thiserror",
  "tokio",
  "utoipa",
  "uuid",
