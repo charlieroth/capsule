@@ -40,6 +40,8 @@ services:
         condition: service_completed_successfully
     environment:
       DATABASE_URL: postgres://capsule:capsule_password@localhost:5432/capsule_dev
+      BIND_ADDR: 127.0.0.1:8080
+      JWT_SECRET: dev-secret-change-me
     ports: ["8080:8080"]
     restart: unless-stopped
     command: ["/app/capsule-api"]
