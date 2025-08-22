@@ -75,6 +75,7 @@ impl Config {
     }
 
     /// Development defaults (mirrors `from_env` with no env overrides).
+    #[allow(clippy::should_implement_trait)]
     pub fn default() -> Self {
         // not `Default` impl yet to keep explicit semantics
         Self::new(DEFAULT_DATABASE_URL, DEFAULT_BIND_ADDR, DEFAULT_JWT_SECRET)

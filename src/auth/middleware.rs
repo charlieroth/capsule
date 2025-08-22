@@ -1,4 +1,3 @@
-
 use axum::{
     Json,
     extract::{FromRequestParts, Request},
@@ -97,21 +96,24 @@ pub async fn auth_middleware(req: Request, next: Next) -> Response {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{app_state::AppState, repositories::user::MockUserRepositoryTrait};
     use axum::{
         Json, Router,
         body::to_bytes,
-        http::{header::AUTHORIZATION, Request, StatusCode},
+        http::{Request, StatusCode, header::AUTHORIZATION},
         response::Json as ResponseJson,
         routing::get,
     };
-    use crate::{
-        app_state::AppState,
-        repositories::user::MockUserRepositoryTrait,
-    };
-    use serde_json::{json, Value};
+    use serde_json::{Value, json};
+    use sqlx::{Pool, Postgres};
     use std::sync::Arc;
     use tower::ServiceExt;
     use uuid::Uuid;
+
+    fn create_test_pool() -> Pool<Postgres> {
+        // Create a dummy pool for testing - won't actually be used
+        Pool::<Postgres>::connect_lazy("postgresql://dummy").expect("Failed to create test pool")
+    }
 
     async fn protected_handler(auth_user: AuthenticatedUser) -> ResponseJson<Value> {
         Json(json!({
@@ -124,6 +126,7 @@ mod tests {
         let mock_repo = MockUserRepositoryTrait::new();
         let state = AppState {
             user_repo: Arc::new(mock_repo),
+            db_pool: create_test_pool(),
         };
 
         Router::new()
@@ -134,17 +137,19 @@ mod tests {
     fn create_jwt_token(user_id: Uuid) -> String {
         let config = Config::from_env().expect("Failed to load config");
         let jwt_service = JwtService::new(config.jwt_secret());
-        jwt_service.generate_token(user_id).expect("Failed to generate token")
+        jwt_service
+            .generate_token(user_id)
+            .expect("Failed to generate token")
     }
 
     fn create_expired_jwt_token(user_id: Uuid) -> String {
-        use chrono::{Duration, Utc};
-        use jsonwebtoken::{encode, EncodingKey, Header};
         use crate::auth::jwt::Claims;
+        use chrono::{Duration, Utc};
+        use jsonwebtoken::{EncodingKey, Header, encode};
 
         let config = Config::from_env().expect("Failed to load config");
         let encoding_key = EncodingKey::from_secret(config.jwt_secret().as_ref());
-        
+
         let now = Utc::now();
         let expired_time = now - Duration::hours(1);
 
@@ -268,7 +273,7 @@ mod tests {
 
         let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
         let json: Value = serde_json::from_slice(&body).unwrap();
-        
+
         assert_eq!(json["user_id"], user_id.to_string());
         assert_eq!(json["message"], "Access granted");
     }

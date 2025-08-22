@@ -9,8 +9,12 @@ use capsule::{
 };
 
 pub fn test_app(pool: Pool<Postgres>) -> Router {
-    let user_repo: Arc<dyn UserRepositoryTrait + Send + Sync> = Arc::new(UserRepository::new(pool));
-    let state = AppState { user_repo };
+    let user_repo: Arc<dyn UserRepositoryTrait + Send + Sync> =
+        Arc::new(UserRepository::new(pool.clone()));
+    let state = AppState {
+        user_repo,
+        db_pool: pool,
+    };
 
     Router::new()
         .route("/v1/auth/signup", post(signup))
