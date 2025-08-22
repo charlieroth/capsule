@@ -15,6 +15,17 @@ use crate::{
     passwords::Passwords,
 };
 
+#[utoipa::path(
+    post,
+    path = "/v1/auth/signup",
+    tag = "auth",
+    responses(
+        (status = 201, description = "User created successfully"),
+        (status = 400, description = "Bad request", body = ErrorResponse),
+        (status = 409, description = "User already exists", body = ErrorResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
+    )
+)]
 pub async fn signup(State(state): State<AppState>, Json(payload): Json<SignupRequest>) -> Response {
     if let Err(error) = payload.validate() {
         return (StatusCode::BAD_REQUEST, Json(ErrorResponse { error })).into_response();
@@ -71,6 +82,17 @@ pub async fn signup(State(state): State<AppState>, Json(payload): Json<SignupReq
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/v1/auth/login",
+    tag = "auth",
+    responses(
+        (status = 200, description = "Login successful", body = LoginResponse),
+        (status = 400, description = "Bad request", body = ErrorResponse),
+        (status = 401, description = "Invalid credentials", body = ErrorResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
+    )
+)]
 pub async fn login(State(state): State<AppState>, Json(payload): Json<LoginRequest>) -> Response {
     if let Err(error) = payload.validate() {
         return (StatusCode::BAD_REQUEST, Json(ErrorResponse { error })).into_response();

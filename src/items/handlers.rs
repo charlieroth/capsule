@@ -9,8 +9,22 @@ use uuid::Uuid;
 use crate::{
     app_state::AppState,
     auth::{dtos::ErrorResponse, middleware::AuthenticatedUser},
+    items::dtos::{CreateItemRequest, ItemResponse, UpdateItemRequest},
 };
 
+#[utoipa::path(
+    get,
+    path = "/v1/items",
+    tag = "items",
+    responses(
+        (status = 200, description = "List items successfully", body = [ItemResponse]),
+        (status = 401, description = "Unauthorized", body = ErrorResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn list_items(_auth_user: AuthenticatedUser, State(_state): State<AppState>) -> Response {
     (
         StatusCode::NOT_IMPLEMENTED,
@@ -21,10 +35,24 @@ pub async fn list_items(_auth_user: AuthenticatedUser, State(_state): State<AppS
         .into_response()
 }
 
+#[utoipa::path(
+    post,
+    path = "/v1/items",
+    tag = "items",
+    responses(
+        (status = 201, description = "Item created successfully", body = ItemResponse),
+        (status = 400, description = "Bad request", body = ErrorResponse),
+        (status = 401, description = "Unauthorized", body = ErrorResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn create_item(
     _auth_user: AuthenticatedUser,
     State(_state): State<AppState>,
-    Json(_payload): Json<serde_json::Value>,
+    Json(_payload): Json<CreateItemRequest>,
 ) -> Response {
     (
         StatusCode::NOT_IMPLEMENTED,
@@ -35,6 +63,23 @@ pub async fn create_item(
         .into_response()
 }
 
+#[utoipa::path(
+    get,
+    path = "/v1/items/{id}",
+    tag = "items",
+    params(
+        ("id" = Uuid, Path, description = "Item ID")
+    ),
+    responses(
+        (status = 200, description = "Item retrieved successfully", body = ItemResponse),
+        (status = 401, description = "Unauthorized", body = ErrorResponse),
+        (status = 404, description = "Item not found", body = ErrorResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn get_item(
     _auth_user: AuthenticatedUser,
     State(_state): State<AppState>,
@@ -49,11 +94,29 @@ pub async fn get_item(
         .into_response()
 }
 
+#[utoipa::path(
+    patch,
+    path = "/v1/items/{id}",
+    tag = "items",
+    params(
+        ("id" = Uuid, Path, description = "Item ID")
+    ),
+    responses(
+        (status = 200, description = "Item updated successfully", body = ItemResponse),
+        (status = 400, description = "Bad request", body = ErrorResponse),
+        (status = 401, description = "Unauthorized", body = ErrorResponse),
+        (status = 404, description = "Item not found", body = ErrorResponse),
+        (status = 500, description = "Internal server error", body = ErrorResponse)
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn update_item(
     _auth_user: AuthenticatedUser,
     State(_state): State<AppState>,
     Path(_id): Path<Uuid>,
-    Json(_payload): Json<serde_json::Value>,
+    Json(_payload): Json<UpdateItemRequest>,
 ) -> Response {
     (
         StatusCode::NOT_IMPLEMENTED,
@@ -131,7 +194,7 @@ mod tests {
             .uri("/items")
             .header(AUTHORIZATION, format!("Bearer {}", token))
             .header("content-type", "application/json")
-            .body(Body::from("{}"))
+            .body(Body::from(r#"{"url": "https://example.com"}"#))
             .unwrap();
 
         let response = app.clone().oneshot(request).await.unwrap();

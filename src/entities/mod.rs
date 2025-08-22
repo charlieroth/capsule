@@ -1,10 +1,13 @@
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 /// --- PostgreSQL Enums ---
-#[derive(sqlx::Type, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(sqlx::Type, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 #[sqlx(type_name = "item_status", rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
 pub enum ItemStatus {
     Pending,
     Fetched,

@@ -41,7 +41,7 @@ impl JwtService {
     pub fn verify_token(&self, token: &str) -> Result<Claims> {
         let mut validation = Validation::default();
         validation.leeway = 60; // Allow 60 seconds clock skew
-        
+
         let token_data = decode::<Claims>(token, &self.decoding_key, &validation)?;
         Ok(token_data.claims)
     }

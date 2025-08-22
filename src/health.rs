@@ -2,15 +2,25 @@ use axum::{Json, extract::State, http::StatusCode};
 use serde::Serialize;
 use sqlx::{Pool, Postgres};
 use tracing::{error, info};
+use utoipa::ToSchema;
 
 use crate::app_state::AppState;
 
-#[derive(Serialize)]
+#[derive(Serialize, ToSchema)]
 pub struct HealthResponse {
     status: String,
     database: String,
 }
 
+#[utoipa::path(
+    get,
+    path = "/healthz",
+    tag = "health",
+    responses(
+        (status = 200, description = "Health check successful", body = HealthResponse),
+        (status = 503, description = "Service unavailable")
+    )
+)]
 pub async fn health_check(
     State(state): State<AppState>,
 ) -> Result<Json<HealthResponse>, StatusCode> {
