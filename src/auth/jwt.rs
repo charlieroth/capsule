@@ -39,7 +39,10 @@ impl JwtService {
     }
 
     pub fn verify_token(&self, token: &str) -> Result<Claims> {
-        let token_data = decode::<Claims>(token, &self.decoding_key, &Validation::default())?;
+        let mut validation = Validation::default();
+        validation.leeway = 60; // Allow 60 seconds clock skew
+        
+        let token_data = decode::<Claims>(token, &self.decoding_key, &validation)?;
         Ok(token_data.claims)
     }
 }
@@ -76,6 +79,25 @@ mod tests {
 
         let token = jwt_service1.generate_token(user_id).unwrap();
         let result = jwt_service2.verify_token(&token);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_verify_expired_token() {
+        let jwt_service = JwtService::new("test-secret");
+        let user_id = Uuid::new_v4();
+
+        let now = Utc::now();
+        let expired_time = now - Duration::hours(25); // Expired 1 hour ago (token expires after 24h)
+
+        let claims = Claims {
+            sub: user_id.to_string(),
+            exp: expired_time.timestamp() as usize,
+            iat: (expired_time - Duration::hours(24)).timestamp() as usize,
+        };
+
+        let token = encode(&Header::default(), &claims, &jwt_service.encoding_key).unwrap();
+        let result = jwt_service.verify_token(&token);
         assert!(result.is_err());
     }
 }
