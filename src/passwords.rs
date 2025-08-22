@@ -50,12 +50,18 @@ impl<'a> Passwords<'a> {
             .a2
             .verify_password(password.as_bytes(), &parsed)
             .is_ok();
-        let needs_rehash = ok
-            && !(parsed.algorithm == Algorithm::Argon2id.ident()
-                && parsed.version == Some(Version::V0x13.into())
-                && parsed.params.m_cost == Some(self.a2.params().m_cost())
-                && parsed.params.t_cost == Some(self.a2.params().t_cost())
-                && parsed.params.p_cost == Some(self.a2.params().p_cost()));
+        let needs_rehash = if ok {
+            match Params::try_from(&parsed) {
+                Ok(parsed_params) => {
+                    parsed.algorithm != Algorithm::Argon2id.ident()
+                        || parsed.version != Some(Version::V0x13.into())
+                        || parsed_params != *self.a2.params()
+                }
+                Err(_) => true,
+            }
+        } else {
+            false
+        };
         Ok((ok, needs_rehash))
     }
 
@@ -70,38 +76,163 @@ impl<'a> Passwords<'a> {
     }
 }
 
-pub fn hash_password(password: &str) -> Result<String> {
-    let salt = SaltString::generate(&mut OsRng);
-    let argon2 = Argon2::default();
-    let phc = argon2
-        .hash_password(password.as_bytes(), &salt)
-        .map_err(|e| PasswordError::HashingFailed(e.to_string()))?
-        .to_string();
-    Ok(phc)
-}
-
-pub fn verify_password(password: &str, pw_hash: &str) -> Result<bool> {
-    let parsed =
-        PasswordHash::new(pw_hash).map_err(|e| PasswordError::InvalidHash(e.to_string()))?;
-    let argon2 = Argon2::default();
-    let password_ok = argon2.verify_password(password.as_bytes(), &parsed).is_ok();
-    Ok(password_ok)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_hash_and_verify_ok() {
-        let h = hash_password("secret").unwrap();
-        assert!(verify_password("secret", &h).unwrap());
+    fn create_hasher() -> Passwords<'static> {
+        Passwords::new(65536, 2, 1)
     }
 
     #[test]
-    fn test_invalid_hash() {
-        let result = verify_password("secret", "invalid_hash");
+    fn test_hash_success() {
+        let hasher = create_hasher();
+        let password = "test_password";
+        let result = hasher.hash(password);
+        assert!(result.is_ok());
+        
+        let hash = result.unwrap();
+        assert!(!hash.is_empty());
+        assert!(hash.starts_with("$argon2id$v=19$"));
+    }
+
+    #[test]
+    fn test_verify_success() {
+        let hasher = create_hasher();
+        let password = "test_password";
+        let hash = hasher.hash(password).unwrap();
+        
+        let result = hasher.verify(password, &hash);
+        assert!(result.is_ok());
+        
+        let (is_valid, _needs_rehash) = result.unwrap();
+        assert!(is_valid);
+    }
+
+    #[test]
+    fn test_verify_wrong_password() {
+        let hasher = create_hasher();
+        let password = "test_password";
+        let wrong_password = "wrong_password";
+        let hash = hasher.hash(password).unwrap();
+        
+        let result = hasher.verify(wrong_password, &hash);
+        assert!(result.is_ok());
+        
+        let (is_valid, needs_rehash) = result.unwrap();
+        assert!(!is_valid);
+        assert!(!needs_rehash);
+    }
+
+    #[test]
+    fn test_hash_password_too_short() {
+        let hasher = create_hasher();
+        let short_password = "1234567"; // 7 chars, min is 8
+        
+        let result = hasher.hash(short_password);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), PasswordError::InvalidHash(_)));
+        
+        match result.unwrap_err() {
+            PasswordError::HashingFailed(msg) => {
+                assert_eq!(msg, "password length out of bounds");
+            }
+            _ => panic!("Expected HashingFailed error"),
+        }
+    }
+
+    #[test]
+    fn test_hash_password_too_long() {
+        let hasher = create_hasher();
+        let long_password = "a".repeat(513); // 513 chars, max is 512
+        
+        let result = hasher.hash(&long_password);
+        assert!(result.is_err());
+        
+        match result.unwrap_err() {
+            PasswordError::HashingFailed(msg) => {
+                assert_eq!(msg, "password length out of bounds");
+            }
+            _ => panic!("Expected HashingFailed error"),
+        }
+    }
+
+    #[test]
+    fn test_hash_password_boundary_lengths() {
+        let hasher = create_hasher();
+        
+        // Test minimum length (8 chars)
+        let min_password = "12345678";
+        assert!(hasher.hash(min_password).is_ok());
+        
+        // Test maximum length (512 chars)
+        let max_password = "a".repeat(512);
+        assert!(hasher.hash(&max_password).is_ok());
+    }
+
+    #[test]
+    fn test_verify_invalid_hash_format() {
+        let hasher = create_hasher();
+        let password = "test_password";
+        let invalid_hash = "invalid_hash_format";
+        
+        let result = hasher.verify(password, invalid_hash);
+        assert!(result.is_err());
+        
+        match result.unwrap_err() {
+            PasswordError::InvalidHash(_) => {
+                // Expected error
+            }
+            _ => panic!("Expected InvalidHash error"),
+        }
+    }
+
+    #[test]
+    fn test_verify_empty_hash() {
+        let hasher = create_hasher();
+        let password = "test_password";
+        let empty_hash = "";
+        
+        let result = hasher.verify(password, empty_hash);
+        assert!(result.is_err());
+        
+        match result.unwrap_err() {
+            PasswordError::InvalidHash(_) => {
+                // Expected error
+            }
+            _ => panic!("Expected InvalidHash error"),
+        }
+    }
+
+    #[test]
+    fn test_rehash_detection_different_params() {
+        // Create hasher with different params
+        let old_hasher = Passwords::new(32768, 1, 1); // Different memory
+        let new_hasher = Passwords::new(65536, 2, 1); // Current params
+        
+        let password = "test_password";
+        let old_hash = old_hasher.hash(password).unwrap();
+        
+        let result = new_hasher.verify(password, &old_hash);
+        assert!(result.is_ok());
+        
+        let (is_valid, needs_rehash) = result.unwrap();
+        assert!(is_valid);
+        assert!(needs_rehash);
+    }
+
+    #[test]
+    fn test_unicode_password() {
+        let hasher = create_hasher();
+        let unicode_password = "пароль123🔒";
+        
+        let hash_result = hasher.hash(unicode_password);
+        assert!(hash_result.is_ok());
+        
+        let hash = hash_result.unwrap();
+        let verify_result = hasher.verify(unicode_password, &hash);
+        assert!(verify_result.is_ok());
+        
+        let (is_valid, _needs_rehash) = verify_result.unwrap();
+        assert!(is_valid);
     }
 }
