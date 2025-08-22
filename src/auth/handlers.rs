@@ -142,3 +142,109 @@ pub async fn login(State(state): State<AppState>, Json(payload): Json<LoginReque
 
     (StatusCode::OK, Json(LoginResponse { token })).into_response()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::repositories::user::MockUserRepositoryTrait;
+    use axum::{body::Body, http::Request};
+    use std::sync::Arc;
+    use tower::ServiceExt;
+
+    #[tokio::test]
+    async fn test_signup_database_error_on_find() {
+        let mut mock_repo = MockUserRepositoryTrait::new();
+        mock_repo
+            .expect_find_by_email()
+            .returning(|_| Err(anyhow::anyhow!("Database connection failed")));
+
+        let state = AppState {
+            user_repo: Arc::new(mock_repo),
+        };
+
+        let app = axum::Router::new()
+            .route("/signup", axum::routing::post(signup))
+            .with_state(state);
+
+        let request = Request::builder()
+            .method("POST")
+            .uri("/signup")
+            .header("content-type", "application/json")
+            .body(Body::from(
+                serde_json::json!({
+                    "email": "test@example.com",
+                    "password": "validpassword123"
+                })
+                .to_string(),
+            ))
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_signup_database_error_on_create() {
+        let mut mock_repo = MockUserRepositoryTrait::new();
+        mock_repo.expect_find_by_email().returning(|_| Ok(None));
+        mock_repo
+            .expect_create()
+            .returning(|_, _| Err(anyhow::anyhow!("Database insert failed")));
+
+        let state = AppState {
+            user_repo: Arc::new(mock_repo),
+        };
+
+        let app = axum::Router::new()
+            .route("/signup", axum::routing::post(signup))
+            .with_state(state);
+
+        let request = Request::builder()
+            .method("POST")
+            .uri("/signup")
+            .header("content-type", "application/json")
+            .body(Body::from(
+                serde_json::json!({
+                    "email": "test@example.com",
+                    "password": "validpassword123"
+                })
+                .to_string(),
+            ))
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_login_database_error() {
+        let mut mock_repo = MockUserRepositoryTrait::new();
+        mock_repo
+            .expect_find_by_email()
+            .returning(|_| Err(anyhow::anyhow!("Database connection failed")));
+
+        let state = AppState {
+            user_repo: Arc::new(mock_repo),
+        };
+
+        let app = axum::Router::new()
+            .route("/login", axum::routing::post(login))
+            .with_state(state);
+
+        let request = Request::builder()
+            .method("POST")
+            .uri("/login")
+            .header("content-type", "application/json")
+            .body(Body::from(
+                serde_json::json!({
+                    "email": "test@example.com",
+                    "password": "anypassword"
+                })
+                .to_string(),
+            ))
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+}

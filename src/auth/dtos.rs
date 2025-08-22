@@ -42,12 +42,12 @@ impl LoginRequest {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct LoginResponse {
     pub token: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ErrorResponse {
     pub error: String,
 }
