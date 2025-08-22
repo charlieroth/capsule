@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 anyhow = { version = "1.0.99" }
+thiserror = { version = "2.0.16" }
 uuid = { version = "1.18.0" }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = { version = "1.0.143" }
