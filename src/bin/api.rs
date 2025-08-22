@@ -1,5 +1,5 @@
-use axum::{Router, routing::get};
-use capsule::config;
+use axum::{Router, extract::State, routing::get};
+use capsule::{app_state::AppState, config};
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 use std::time::Duration;
 
@@ -15,13 +15,15 @@ async fn main() {
         .await
         .unwrap();
 
-    let app = Router::new().route("/", get(root));
+    let app_state = AppState::new(pool);
+    let app = Router::new().route("/", get(root)).with_state(app_state);
+
     let listener = tokio::net::TcpListener::bind(config.bind_addr())
         .await
         .expect("Failed to bind to address");
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn root() -> &'static str {
+async fn root(State(_state): State<AppState>) -> &'static str {
     "Hello from capsule!"
 }
