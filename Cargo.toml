@@ -24,3 +24,11 @@ sqlx = { version = "0.8.6", features = [
     "chrono",
     "uuid",
 ] }
+regex = { version = "1.0" }
+dashmap = { version = "6.0" }
+async-trait = "0.1"
+
+[dev-dependencies]
+mockall = "0.13"
+tower = "0.5"
+hyper = "1.0"

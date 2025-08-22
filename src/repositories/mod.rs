@@ -1,3 +1,3 @@
 pub mod user;
 
-pub use user::UserRepository;
+pub use user::{UserRepository, UserRepositoryTrait};

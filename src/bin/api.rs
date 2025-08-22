@@ -1,5 +1,15 @@
-use axum::{Router, extract::State, routing::get};
-use capsule::{app_state::AppState, config};
+use axum::{
+    Router,
+    extract::State,
+    middleware::from_fn_with_state,
+    routing::{get, post},
+};
+use capsule::{
+    app_state::AppState,
+    auth::handlers,
+    config,
+    middleware::rate_limit::{RateLimit, rate_limit_middleware},
+};
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 use std::time::Duration;
 
@@ -16,7 +26,17 @@ async fn main() {
         .unwrap();
 
     let app_state = AppState::new(pool);
-    let app = Router::new().route("/", get(root)).with_state(app_state);
+    let rate_limit = RateLimit::new(10, 60); // 10 requests per minute
+
+    let auth_routes = Router::new()
+        .route("/signup", post(handlers::signup))
+        .route("/login", post(handlers::login))
+        .layer(from_fn_with_state(rate_limit, rate_limit_middleware));
+
+    let app = Router::new()
+        .route("/", get(root))
+        .nest("/v1/auth", auth_routes)
+        .with_state(app_state);
 
     let listener = tokio::net::TcpListener::bind(config.bind_addr())
         .await

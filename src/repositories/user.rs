@@ -3,6 +3,16 @@ use anyhow::Result;
 use sqlx::{Pool, Postgres};
 use uuid::Uuid;
 
+#[cfg_attr(test, mockall::automock)]
+#[async_trait::async_trait]
+pub trait UserRepositoryTrait {
+    async fn create(&self, email: &str, pw_hash: &str) -> Result<User>;
+    async fn find_by_id(&self, id: Uuid) -> Result<Option<User>>;
+    async fn find_by_email(&self, email: &str) -> Result<Option<User>>;
+    async fn update_password(&self, id: Uuid, new_pw_hash: &str) -> Result<bool>;
+    async fn delete(&self, id: Uuid) -> Result<bool>;
+}
+
 #[derive(Clone)]
 pub struct UserRepository {
     pool: Pool<Postgres>,
@@ -12,8 +22,11 @@ impl UserRepository {
     pub fn new(pool: Pool<Postgres>) -> Self {
         Self { pool }
     }
+}
 
-    pub async fn create(&self, email: &str, pw_hash: &str) -> Result<User> {
+#[async_trait::async_trait]
+impl UserRepositoryTrait for UserRepository {
+    async fn create(&self, email: &str, pw_hash: &str) -> Result<User> {
         let user = sqlx::query_as!(
             User,
             r#"
@@ -30,7 +43,7 @@ impl UserRepository {
         Ok(user)
     }
 
-    pub async fn find_by_id(&self, id: Uuid) -> Result<Option<User>> {
+    async fn find_by_id(&self, id: Uuid) -> Result<Option<User>> {
         let user = sqlx::query_as!(
             User,
             r#"
@@ -46,7 +59,7 @@ impl UserRepository {
         Ok(user)
     }
 
-    pub async fn find_by_email(&self, email: &str) -> Result<Option<User>> {
+    async fn find_by_email(&self, email: &str) -> Result<Option<User>> {
         let user = sqlx::query_as!(
             User,
             r#"
@@ -62,7 +75,7 @@ impl UserRepository {
         Ok(user)
     }
 
-    pub async fn update_password(&self, id: Uuid, new_pw_hash: &str) -> Result<bool> {
+    async fn update_password(&self, id: Uuid, new_pw_hash: &str) -> Result<bool> {
         let result = sqlx::query!(
             r#"
             UPDATE users
@@ -78,7 +91,7 @@ impl UserRepository {
         Ok(result.rows_affected() > 0)
     }
 
-    pub async fn delete(&self, id: Uuid) -> Result<bool> {
+    async fn delete(&self, id: Uuid) -> Result<bool> {
         let result = sqlx::query!(
             r#"
             DELETE FROM users

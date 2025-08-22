@@ -1,5 +1,7 @@
 pub mod app_state;
+pub mod auth;
 pub mod config;
 pub mod entities;
+pub mod middleware;
 pub mod passwords;
 pub mod repositories;
