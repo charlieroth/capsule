@@ -148,8 +148,14 @@ mod tests {
     use super::*;
     use crate::repositories::user::MockUserRepositoryTrait;
     use axum::{body::Body, http::Request};
+    use sqlx::{Pool, Postgres};
     use std::sync::Arc;
     use tower::ServiceExt;
+
+    fn create_test_pool() -> Pool<Postgres> {
+        // Create a dummy pool for testing - won't actually be used
+        Pool::<Postgres>::connect_lazy("postgresql://dummy").expect("Failed to create test pool")
+    }
 
     #[tokio::test]
     async fn test_signup_database_error_on_find() {
@@ -160,6 +166,7 @@ mod tests {
 
         let state = AppState {
             user_repo: Arc::new(mock_repo),
+            db_pool: create_test_pool(),
         };
 
         let app = axum::Router::new()
@@ -193,6 +200,7 @@ mod tests {
 
         let state = AppState {
             user_repo: Arc::new(mock_repo),
+            db_pool: create_test_pool(),
         };
 
         let app = axum::Router::new()
@@ -225,6 +233,7 @@ mod tests {
 
         let state = AppState {
             user_repo: Arc::new(mock_repo),
+            db_pool: create_test_pool(),
         };
 
         let app = axum::Router::new()

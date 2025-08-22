@@ -11,10 +11,7 @@ use crate::{
     auth::{dtos::ErrorResponse, middleware::AuthenticatedUser},
 };
 
-pub async fn list_items(
-    _auth_user: AuthenticatedUser,
-    State(_state): State<AppState>,
-) -> Response {
+pub async fn list_items(_auth_user: AuthenticatedUser, State(_state): State<AppState>) -> Response {
     (
         StatusCode::NOT_IMPLEMENTED,
         Json(ErrorResponse {
@@ -71,23 +68,28 @@ pub async fn update_item(
 mod tests {
     use super::*;
     use crate::{
-        auth::jwt::JwtService,
-        config::Config,
-        repositories::user::MockUserRepositoryTrait,
+        auth::jwt::JwtService, config::Config, repositories::user::MockUserRepositoryTrait,
     };
     use axum::{
         Router,
         body::Body,
-        http::{header::AUTHORIZATION, Request},
-        routing::{get, post, patch},
+        http::{Request, header::AUTHORIZATION},
+        routing::{get, patch, post},
     };
+    use sqlx::{Pool, Postgres};
     use std::sync::Arc;
     use tower::ServiceExt;
+
+    fn create_test_pool() -> Pool<Postgres> {
+        // Create a dummy pool for testing - won't actually be used
+        Pool::<Postgres>::connect_lazy("postgresql://dummy").expect("Failed to create test pool")
+    }
 
     fn create_test_app() -> Router {
         let mock_repo = MockUserRepositoryTrait::new();
         let state = AppState {
             user_repo: Arc::new(mock_repo),
+            db_pool: create_test_pool(),
         };
 
         Router::new()
@@ -101,7 +103,9 @@ mod tests {
     fn create_jwt_token(user_id: Uuid) -> String {
         let config = Config::from_env().expect("Failed to load config");
         let jwt_service = JwtService::new(config.jwt_secret());
-        jwt_service.generate_token(user_id).expect("Failed to generate token")
+        jwt_service
+            .generate_token(user_id)
+            .expect("Failed to generate token")
     }
 
     #[tokio::test]

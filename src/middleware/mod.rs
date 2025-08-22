@@ -1,3 +1,3 @@
 pub mod rate_limit;
 
-pub use crate::auth::middleware::{AuthenticatedUser, AuthError};
+pub use crate::auth::middleware::{AuthError, AuthenticatedUser};

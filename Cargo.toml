@@ -27,6 +27,10 @@ sqlx = { version = "0.8.6", features = [
 regex = { version = "1.0" }
 dashmap = { version = "6.0" }
 async-trait = "0.1"
+tracing = { version = "0.1.40" }
+tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }
+tower = { version = "0.5" }
+tower-http = { version = "0.6", features = ["trace", "request-id"] }
 
 [dev-dependencies]
 mockall = "0.13"
