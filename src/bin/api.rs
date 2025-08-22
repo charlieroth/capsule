@@ -6,8 +6,14 @@ use axum::{
 };
 use capsule::{
     app_state::AppState,
-    auth::handlers,
-    config, health, items,
+    auth::{
+        dtos::{ErrorResponse, LoginRequest, LoginResponse, SignupRequest},
+        handlers,
+    },
+    config,
+    entities::ItemStatus,
+    health, items,
+    items::dtos::{CreateItemRequest, ItemResponse, UpdateItemRequest},
     middleware::rate_limit::{RateLimit, rate_limit_middleware},
 };
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
@@ -18,6 +24,57 @@ use tower_http::{
 };
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use utoipa::{
+    OpenApi,
+    openapi::security::{Http, HttpAuthScheme, SecurityScheme},
+};
+use utoipa_swagger_ui::SwaggerUi;
+
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        health::health_check,
+        handlers::signup,
+        handlers::login,
+        items::handlers::list_items,
+        items::handlers::create_item,
+        items::handlers::get_item,
+        items::handlers::update_item,
+    ),
+    components(
+        schemas(
+            health::HealthResponse,
+            SignupRequest,
+            LoginRequest,
+            LoginResponse,
+            ErrorResponse,
+            CreateItemRequest,
+            UpdateItemRequest,
+            ItemResponse,
+            ItemStatus,
+        )
+    ),
+    tags(
+        (name = "health", description = "Health check endpoints"),
+        (name = "auth", description = "Authentication endpoints"),
+        (name = "items", description = "Item management endpoints")
+    ),
+    modifiers(&SecurityAddon)
+)]
+struct ApiDoc;
+
+struct SecurityAddon;
+
+impl utoipa::Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        if let Some(components) = openapi.components.as_mut() {
+            components.add_security_scheme(
+                "bearer_auth",
+                SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)),
+            )
+        }
+    }
+}
 
 #[tokio::main]
 async fn main() {
@@ -59,6 +116,7 @@ async fn main() {
         .route("/healthz", get(health::health_check))
         .nest("/v1/auth", auth_routes)
         .nest("/v1/items", item_routes)
+        .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .layer(PropagateRequestIdLayer::x_request_id())
         .layer(SetRequestIdLayer::x_request_id(MakeRequestUuid))
         .layer(TraceLayer::new_for_http())
