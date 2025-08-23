@@ -1,0 +1,128 @@
+name: Task
+description: Create a task or work item
+title: "[TASK] "
+labels: ["task", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to create development tasks, maintenance work, or other project activities.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Task Description
+      description: Clearly describe what needs to be done.
+      placeholder: Describe the task that needs to be completed...
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+      description: Explain why this task is necessary or beneficial.
+      placeholder: This task is needed because...
+    validations:
+      required: true
+
+  - type: textarea
+    id: definition-of-done
+    attributes:
+      label: Definition of Done
+      description: What criteria must be met for this task to be considered complete?
+      placeholder: |
+        - [ ] Specific deliverable 1
+        - [ ] Specific deliverable 2
+        - [ ] Tests written/updated
+        - [ ] Documentation updated
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Task Type
+      description: What type of task is this?
+      options:
+        - Development (new feature/functionality)
+        - Refactoring (code improvement)
+        - Maintenance (updates, cleanup)
+        - Documentation (docs, README, etc.)
+        - Infrastructure (CI/CD, deployment)
+        - Testing (add/improve tests)
+        - Research (investigation, exploration)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How urgent is this task?
+      options:
+        - Critical (must be done immediately)
+        - High (should be done soon)
+        - Medium (normal priority)
+        - Low (can be done later)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: Estimated Effort
+      description: How much work do you think this will require?
+      options:
+        - XS (< 1 hour)
+        - S (1-4 hours)
+        - M (4-8 hours)
+        - L (1-2 days)
+        - XL (2+ days)
+        - Unknown
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Sub-tasks
+      description: Break down the work into smaller, actionable items.
+      placeholder: |
+        - [ ] Task 1
+        - [ ] Task 2
+        - [ ] Task 3
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Are there any other issues, PRs, or external dependencies that must be completed first?
+      placeholder: |
+        - Depends on #123
+        - Requires external library X to be updated
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Specific, testable conditions that must be satisfied.
+      placeholder: |
+        - Given [context], when [action], then [expected result]
+        - System should handle [scenario] correctly
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other relevant information, links, or context.
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      options:
+        - label: I have provided a clear description and definition of done
+          required: true
+        - label: I have checked for similar existing tasks
+          required: true
+        - label: This task is appropriately scoped (not too large)
+          required: true
