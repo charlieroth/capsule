@@ -1,5 +1,7 @@
 # capsule
 
+[![CI](https://github.com/charlieroth/capsule/actions/workflows/ci.yml/badge.svg)](https://github.com/charlieroth/capsule/actions/workflows/ci.yml)
+
 A pragmatic "read later" service built in Rust to explore production-grade web service patterns:
 
 - Authentication

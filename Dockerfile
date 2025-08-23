@@ -1,5 +1,5 @@
 # build
-FROM rust:1.85-bookworm AS build
+FROM rust:1.89-bookworm AS build
 WORKDIR /app
 # cache deps
 COPY Cargo.toml Cargo.lock ./
