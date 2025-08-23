@@ -1,0 +1,20 @@
+# Global owners
+* @charlieroth
+
+# Rust code
+*.rs @charlieroth
+Cargo.toml @charlieroth
+Cargo.lock @charlieroth
+
+# Database migrations
+migrations/ @charlieroth
+
+# Documentation
+*.md @charlieroth
+docs/ @charlieroth
+
+# CI/CD
+.github/ @charlieroth
+Dockerfile @charlieroth
+docker-compose.yml @charlieroth
+Makefile @charlieroth
