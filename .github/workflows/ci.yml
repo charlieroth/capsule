@@ -8,6 +8,8 @@ env:
   CARGO_TERM_COLOR: always
   DATABASE_URL: postgres://capsule:capsule_password@localhost:5432/capsule_dev
   JWT_SECRET: dev-secret-change-me
+  # RUSTC_WRAPPER: sccache
+  # SCCACHE_GHA_ENABLED: "true"
 
 jobs:
   ci:
@@ -30,33 +32,41 @@ jobs:
           --health-retries 5
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Rust toolchain
+      - name: Rust toolchain
         uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: stable
           components: rustfmt, clippy
 
-      - name: Cache Rust dependencies
+      # - name: Setup sccache
+      #   uses: mozilla-actions/sccache-action@v0.0.6
+
+      - name: Rust dependency cache
         uses: Swatinem/rust-cache@v2
         with:
-          shared-key: "ci-cache"
+          shared-key: ci-cache
+          cache-provider: github
 
-      - name: Install tools
-        run: |
-          cargo install sqlx-cli --no-default-features --features native-tls,postgres
-          cargo install cargo-audit
-          cargo install cargo-deny
-
-      - name: Cache SQLx
-        uses: actions/cache@v4
+      # Fast, cached installs for cargo-installed tools
+      - name: Install sqlx-cli (cached)
+        uses: baptiste0928/cargo-install@v3
         with:
-          path: |
-            ~/.cargo/bin/sqlx
-            .sqlx
-          key: sqlx-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+          crate: sqlx-cli
+          version: 0.7.4
+          args: --no-default-features --features native-tls,postgres
+          locked: true
+
+      # Use purpose-built actions instead of installing binaries
+      # - name: Security audit
+      #   uses: actions-rs/audit-check@v1
+      #   with:
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+
+      # - name: License/dependency policy
+      #   uses: EmbarkStudios/cargo-deny-action@v2
 
       - name: Wait for PostgreSQL
         run: |
@@ -71,17 +81,14 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
 
-      - name: Run clippy
+      - name: Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
 
-      - name: Run tests
-        run: cargo test --all-features
+      - name: Tests
+        run: cargo test --all-features --locked
 
       - name: SQLx prepare check
         run: cargo sqlx prepare --check --workspace -- --all-features
 
-      # - name: Security audit
-      #   run: cargo audit
-
-      # - name: License/dependency check
-      #   run: cargo deny check
+      # - name: sccache stats
+      #   run: sccache --show-stats || true

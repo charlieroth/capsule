@@ -3,6 +3,14 @@ name = "capsule"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "worker"
+path = "src/bin/worker.rs"
+
+[[example]]
+name = "job_runner_demo"
+path = "examples/job_runner_demo.rs"
+
 [dependencies]
 anyhow = { version = "1.0.99" }
 thiserror = { version = "2.0.16" }
@@ -33,6 +41,8 @@ tracing = { version = "0.1.40" }
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }
 tower = { version = "0.5" }
 tower-http = { version = "0.6", features = ["trace", "request-id"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+rand = { version = "0.8" }
 
 [dev-dependencies]
 mockall = "0.13"

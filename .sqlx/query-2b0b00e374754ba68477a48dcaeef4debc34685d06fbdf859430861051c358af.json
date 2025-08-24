@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE jobs\n            SET visibility_till = $2,\n                updated_at = now()\n            WHERE id = $1 AND status = 'running'::job_status\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2b0b00e374754ba68477a48dcaeef4debc34685d06fbdf859430861051c358af"
+}

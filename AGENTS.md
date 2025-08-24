@@ -7,6 +7,8 @@
 - **Format**: `make fmt` (rustfmt)
 - **Full Check**: `make check` (fmt + lint + test + audit + deny)
 - **Run locally**: `make dev` (starts API on 127.0.0.1:8080)
+- **Run worker**: `cargo run --bin worker` (starts background job processor)
+- **Demo jobs**: `cargo run --example job_runner_demo` (enqueues example jobs)
 
 ## Database Commands
 - **Setup**: `make db-up` → `make db-migrate`

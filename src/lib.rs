@@ -4,6 +4,7 @@ pub mod config;
 pub mod entities;
 pub mod health;
 pub mod items;
+pub mod jobs;
 pub mod middleware;
 pub mod passwords;
 pub mod repositories;
