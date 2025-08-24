@@ -135,8 +135,7 @@ mod tests {
     }
 
     fn create_jwt_token(user_id: Uuid) -> String {
-        let config = Config::from_env().expect("Failed to load config");
-        let jwt_service = JwtService::new(config.jwt_secret());
+        let jwt_service = JwtService::new("test-secret-key");
         jwt_service
             .generate_token(user_id)
             .expect("Failed to generate token")
@@ -147,8 +146,7 @@ mod tests {
         use chrono::{Duration, Utc};
         use jsonwebtoken::{EncodingKey, Header, encode};
 
-        let config = Config::from_env().expect("Failed to load config");
-        let encoding_key = EncodingKey::from_secret(config.jwt_secret().as_ref());
+        let encoding_key = EncodingKey::from_secret(b"test-secret-key");
 
         let now = Utc::now();
         let expired_time = now - Duration::hours(1);
@@ -240,6 +238,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_valid_jwt_token_success() {
+        // Set test environment variable to ensure consistent config
+        unsafe { std::env::set_var("JWT_SECRET", "test-secret-key"); }
+        
         let app = create_test_app();
         let user_id = Uuid::new_v4();
         let token = create_jwt_token(user_id);
@@ -257,6 +258,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_extractor_returns_correct_user_id() {
+        // Set test environment variable to ensure consistent config
+        unsafe { std::env::set_var("JWT_SECRET", "test-secret-key"); }
+        
         let app = create_test_app();
         let user_id = Uuid::new_v4();
         let token = create_jwt_token(user_id);
