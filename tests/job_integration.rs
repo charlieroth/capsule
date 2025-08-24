@@ -3,24 +3,15 @@ use serde_json::json;
 use sqlx::{Pool, Postgres};
 use uuid::Uuid;
 
-use capsule::{
-    entities::JobStatus,
-    jobs::{JobRepository},
-};
+use capsule::{entities::JobStatus, jobs::JobRepository};
 
 /// Test that basic job repository operations work correctly
 #[sqlx::test]
 async fn test_job_enqueue_and_fetch(pool: Pool<Postgres>) {
     // Test enqueuing a job
-    let job_id = JobRepository::enqueue(
-        &pool,
-        "test_job",
-        json!({"test": "data"}),
-        None,
-        None,
-    )
-    .await
-    .expect("Failed to enqueue job");
+    let job_id = JobRepository::enqueue(&pool, "test_job", json!({"test": "data"}), None, None)
+        .await
+        .expect("Failed to enqueue job");
 
     // Verify job was created correctly
     let job = sqlx::query!(
@@ -38,7 +29,8 @@ async fn test_job_enqueue_and_fetch(pool: Pool<Postgres>) {
 
     // Test fetching due jobs
     let worker_id = Uuid::new_v4();
-    let jobs = JobRepository::fetch_due_jobs(&pool, 10, worker_id, 300).await
+    let jobs = JobRepository::fetch_due_jobs(&pool, 10, worker_id, 300)
+        .await
         .expect("Failed to fetch due jobs");
 
     assert_eq!(jobs.len(), 1);
@@ -52,18 +44,13 @@ async fn test_job_enqueue_and_fetch(pool: Pool<Postgres>) {
 #[sqlx::test]
 async fn test_job_success(pool: Pool<Postgres>) {
     // Enqueue a job
-    let job_id = JobRepository::enqueue(
-        &pool,
-        "test_job",
-        json!({"test": "data"}),
-        None,
-        None,
-    )
-    .await
-    .expect("Failed to enqueue job");
+    let job_id = JobRepository::enqueue(&pool, "test_job", json!({"test": "data"}), None, None)
+        .await
+        .expect("Failed to enqueue job");
 
     // Mark it as successful
-    JobRepository::mark_success(&pool, job_id).await
+    JobRepository::mark_success(&pool, job_id)
+        .await
         .expect("Failed to mark job as successful");
 
     // Verify the status
@@ -84,27 +71,15 @@ async fn test_job_success(pool: Pool<Postgres>) {
 #[sqlx::test]
 async fn test_job_failure_with_retry(pool: Pool<Postgres>) {
     // Enqueue a job
-    let job_id = JobRepository::enqueue(
-        &pool,
-        "test_job",
-        json!({"test": "data"}),
-        None,
-        Some(3),
-    )
-    .await
-    .expect("Failed to enqueue job");
+    let job_id = JobRepository::enqueue(&pool, "test_job", json!({"test": "data"}), None, Some(3))
+        .await
+        .expect("Failed to enqueue job");
 
     // Mark it as failed with retry
     let next_run_at = Utc::now() + chrono::Duration::minutes(5);
-    JobRepository::mark_failure(
-        &pool,
-        job_id,
-        "Test error",
-        Some(next_run_at),
-        60,
-    )
-    .await
-    .expect("Failed to mark job as failed");
+    JobRepository::mark_failure(&pool, job_id, "Test error", Some(next_run_at), 60)
+        .await
+        .expect("Failed to mark job as failed");
 
     // Verify the status
     let job = sqlx::query!(
@@ -164,19 +139,14 @@ async fn test_job_permanent_failure(pool: Pool<Postgres>) {
 #[sqlx::test]
 async fn test_job_visibility_timeout(pool: Pool<Postgres>) {
     // Enqueue a job
-    let job_id = JobRepository::enqueue(
-        &pool,
-        "test_job",
-        json!({"test": "data"}),
-        None,
-        None,
-    )
-    .await
-    .expect("Failed to enqueue job");
+    let job_id = JobRepository::enqueue(&pool, "test_job", json!({"test": "data"}), None, None)
+        .await
+        .expect("Failed to enqueue job");
 
     // Fetch it with a short visibility timeout
     let worker_id = Uuid::new_v4();
-    let jobs = JobRepository::fetch_due_jobs(&pool, 1, worker_id, 1).await // 1 second timeout
+    let jobs = JobRepository::fetch_due_jobs(&pool, 1, worker_id, 1)
+        .await // 1 second timeout
         .expect("Failed to fetch due jobs");
 
     assert_eq!(jobs.len(), 1);
@@ -187,7 +157,8 @@ async fn test_job_visibility_timeout(pool: Pool<Postgres>) {
 
     // Try to fetch again with a different worker - should succeed
     let worker_id_2 = Uuid::new_v4();
-    let jobs = JobRepository::fetch_due_jobs(&pool, 1, worker_id_2, 300).await
+    let jobs = JobRepository::fetch_due_jobs(&pool, 1, worker_id_2, 300)
+        .await
         .expect("Failed to fetch due jobs after timeout");
 
     assert_eq!(jobs.len(), 1);
@@ -201,21 +172,16 @@ async fn test_multiple_job_processing(pool: Pool<Postgres>) {
     // Enqueue multiple jobs
     let mut job_ids = Vec::new();
     for i in 0..5 {
-        let job_id = JobRepository::enqueue(
-            &pool,
-            "test_job",
-            json!({"index": i}),
-            None,
-            None,
-        )
-        .await
-        .expect("Failed to enqueue job");
+        let job_id = JobRepository::enqueue(&pool, "test_job", json!({"index": i}), None, None)
+            .await
+            .expect("Failed to enqueue job");
         job_ids.push(job_id);
     }
 
     // Fetch all jobs at once
     let worker_id = Uuid::new_v4();
-    let jobs = JobRepository::fetch_due_jobs(&pool, 10, worker_id, 300).await
+    let jobs = JobRepository::fetch_due_jobs(&pool, 10, worker_id, 300)
+        .await
         .expect("Failed to fetch due jobs");
 
     assert_eq!(jobs.len(), 5);
@@ -227,7 +193,8 @@ async fn test_multiple_job_processing(pool: Pool<Postgres>) {
 
     // Mark all jobs as successful
     for job in jobs {
-        JobRepository::mark_success(&pool, job.id).await
+        JobRepository::mark_success(&pool, job.id)
+            .await
             .expect("Failed to mark job as successful");
     }
 
@@ -240,7 +207,7 @@ async fn test_multiple_job_processing(pool: Pool<Postgres>) {
         .fetch_one(&pool)
         .await
         .expect("Failed to fetch job");
-        
+
         assert_eq!(job.status, Some("succeeded".to_string()));
     }
 }
