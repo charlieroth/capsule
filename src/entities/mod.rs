@@ -14,20 +14,13 @@ pub enum ItemStatus {
     Archived,
 }
 
-#[derive(sqlx::Type, Debug, Clone, Copy, PartialEq, Eq)]
-#[sqlx(type_name = "job_kind", rename_all = "snake_case")]
-pub enum JobKind {
-    FetchAndExtract,
-    ReindexItem,
-    DeleteItem,
-}
-
-#[derive(sqlx::Type, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(sqlx::Type, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[sqlx(type_name = "job_status", rename_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
 pub enum JobStatus {
     Queued,
     Running,
-    Done,
+    Succeeded,
     Failed,
 }
 
@@ -79,10 +72,16 @@ pub struct ItemTag {
 #[derive(Debug, Clone, FromRow)]
 pub struct Job {
     pub id: Uuid,
-    pub kind: JobKind,
-    pub item_id: Option<Uuid>, // FK -> items.id
+    pub kind: String,               // logical job name
+    pub payload: serde_json::Value, // job data as JSONB
+    pub run_at: DateTime<Utc>,      // next time the job is eligible
+    pub attempts: i32,              // execution attempts so far
+    pub max_attempts: i32,          // maximum attempts before giving up
+    pub backoff_seconds: i32,       // populated when job fails
     pub status: JobStatus,
-    pub run_at: DateTime<Utc>,
-    pub attempts: i32,
     pub last_error: Option<String>,
+    pub visibility_till: Option<DateTime<Utc>>, // set while "running"
+    pub reserved_by: Option<Uuid>,              // worker instance id
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }

@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE jobs\n            SET status = 'succeeded'::job_status,\n                visibility_till = NULL,\n                reserved_by = NULL,\n                updated_at = now()\n            WHERE id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4894089224c089ff5ea365f6c66aa6e9add90477ee9ff4ef0f4a81f7db828894"
+}

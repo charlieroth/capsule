@@ -338,6 +338,7 @@ dependencies = [
  "hyper",
  "jsonwebtoken",
  "mockall",
+ "rand",
  "regex",
  "reqwest",
  "scraper",
@@ -347,6 +348,7 @@ dependencies = [
  "tantivy",
  "thiserror",
  "tokio",
+ "tokio-util",
  "tower",
  "tower-http",
  "tracing",
@@ -3390,6 +3392,7 @@ dependencies = [
  "bytes",
  "futures-core",
  "futures-sink",
+ "futures-util",
  "pin-project-lite",
  "tokio",
 ]
