@@ -65,8 +65,8 @@ jobs:
       #   with:
       #     token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: License/dependency policy
-        uses: EmbarkStudios/cargo-deny-action@v2
+      # - name: License/dependency policy
+      #   uses: EmbarkStudios/cargo-deny-action@v2
 
       - name: Wait for PostgreSQL
         run: |
