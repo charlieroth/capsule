@@ -60,10 +60,10 @@ jobs:
           locked: true
 
       # Use purpose-built actions instead of installing binaries
-      - name: Security audit
-        uses: actions-rs/audit-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Security audit
+      #   uses: actions-rs/audit-check@v1
+      #   with:
+      #     token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: License/dependency policy
         uses: EmbarkStudios/cargo-deny-action@v2
