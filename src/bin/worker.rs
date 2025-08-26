@@ -1,7 +1,7 @@
 use anyhow::Result;
 use capsule::{
     config::Config,
-    jobs::{ExampleJobHandler, JobRegistry, WorkerConfig, WorkerSupervisor},
+    jobs::{ExampleJobHandler, FetchPageJobHandler, JobRegistry, WorkerConfig, WorkerSupervisor},
 };
 
 #[tokio::main]
@@ -26,6 +26,7 @@ async fn main() -> Result<()> {
     // Create job registry and register handlers
     let mut registry = JobRegistry::new();
     registry.register(ExampleJobHandler);
+    registry.register(FetchPageJobHandler::new());
 
     // Create worker configuration
     let worker_config = WorkerConfig {
