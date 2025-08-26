@@ -34,7 +34,7 @@ pub fn get_client() -> &'static Client {
 #[instrument(skip_all, fields(url = %url))]
 pub async fn fetch(url: &str) -> Result<PageResponse, FetchError> {
     let parsed_url = url::Url::parse(url)?;
-    
+
     let response = HTTP_CLIENT
         .get(parsed_url.clone())
         .send()

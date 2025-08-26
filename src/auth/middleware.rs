@@ -239,8 +239,10 @@ mod tests {
     #[tokio::test]
     async fn test_valid_jwt_token_success() {
         // Set test environment variable to ensure consistent config
-        unsafe { std::env::set_var("JWT_SECRET", "test-secret-key"); }
-        
+        unsafe {
+            std::env::set_var("JWT_SECRET", "test-secret-key");
+        }
+
         let app = create_test_app();
         let user_id = Uuid::new_v4();
         let token = create_jwt_token(user_id);
@@ -259,8 +261,10 @@ mod tests {
     #[tokio::test]
     async fn test_extractor_returns_correct_user_id() {
         // Set test environment variable to ensure consistent config
-        unsafe { std::env::set_var("JWT_SECRET", "test-secret-key"); }
-        
+        unsafe {
+            std::env::set_var("JWT_SECRET", "test-secret-key");
+        }
+
         let app = create_test_app();
         let user_id = Uuid::new_v4();
         let token = create_jwt_token(user_id);

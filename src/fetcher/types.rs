@@ -1,6 +1,6 @@
 use bytes::Bytes;
 use chrono::{DateTime, Utc};
-use reqwest::{header::HeaderMap, StatusCode};
+use reqwest::{StatusCode, header::HeaderMap};
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -19,7 +19,7 @@ pub enum Charset {
 impl Charset {
     pub fn from_encoding(encoding: &encoding_rs::Encoding) -> Self {
         use std::ptr;
-        
+
         if ptr::eq(encoding, encoding_rs::UTF_8) {
             Self::Utf8
         } else if ptr::eq(encoding, encoding_rs::WINDOWS_1252) {

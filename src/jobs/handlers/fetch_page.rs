@@ -1,11 +1,8 @@
-use crate::{
-    fetcher::fetch,
-    jobs::handler::JobHandler,
-};
+use crate::{fetcher::fetch, jobs::handler::JobHandler};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
-use tracing::{instrument, Span, warn, info};
+use tracing::{Span, info, instrument, warn};
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -19,9 +16,14 @@ pub struct FetchPageJobHandler;
 #[async_trait]
 impl JobHandler for FetchPageJobHandler {
     #[instrument(skip(self, pool, span), fields(item_id))]
-    async fn run(&self, payload: serde_json::Value, pool: &PgPool, span: Span) -> anyhow::Result<()> {
+    async fn run(
+        &self,
+        payload: serde_json::Value,
+        pool: &PgPool,
+        span: Span,
+    ) -> anyhow::Result<()> {
         let payload: FetchPagePayload = serde_json::from_value(payload)?;
-        
+
         // Record item_id in the span
         span.record("item_id", &tracing::field::display(payload.item_id));
 
@@ -37,7 +39,10 @@ impl JobHandler for FetchPageJobHandler {
             anyhow::bail!("Item {} not found", payload.item_id);
         };
 
-        info!("Fetching content for item {} from URL: {}", payload.item_id, url);
+        info!(
+            "Fetching content for item {} from URL: {}",
+            payload.item_id, url
+        );
 
         // Fetch the page content
         match fetch(&url).await {
@@ -83,15 +88,21 @@ impl JobHandler for FetchPageJobHandler {
                 Ok(())
             }
             Err(fetch_error) => {
-                warn!("Failed to fetch content for item {}: {}", payload.item_id, fetch_error);
-                
+                warn!(
+                    "Failed to fetch content for item {}: {}",
+                    payload.item_id, fetch_error
+                );
+
                 if fetch_error.should_retry() {
                     // Return error to trigger retry by job runner
                     anyhow::bail!("Retryable fetch error: {}", fetch_error);
                 } else {
                     // Mark as permanent failure - don't retry
-                    warn!("Permanent failure for item {}: {}", payload.item_id, fetch_error);
-                    
+                    warn!(
+                        "Permanent failure for item {}: {}",
+                        payload.item_id, fetch_error
+                    );
+
                     // Could optionally update item status to indicate permanent failure
                     // For now, just let the job be marked as failed
                     anyhow::bail!("Permanent fetch error: {}", fetch_error);

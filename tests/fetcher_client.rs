@@ -1,8 +1,7 @@
-
-use capsule::fetcher::{fetch, FetchError};
+use capsule::fetcher::{FetchError, fetch};
 use wiremock::{
-    matchers::{method, path},
     Mock, MockServer, ResponseTemplate,
+    matchers::{method, path},
 };
 
 #[tokio::test]
@@ -13,7 +12,10 @@ async fn test_fetch_success() {
         .and(path("/test"))
         .respond_with(
             ResponseTemplate::new(200)
-                .set_body_bytes("<html><head><title>Test</title></head><body>Hello World</body></html>".as_bytes())
+                .set_body_bytes(
+                    "<html><head><title>Test</title></head><body>Hello World</body></html>"
+                        .as_bytes(),
+                )
                 .insert_header("Content-Type", "text/html; charset=utf-8"),
         )
         .mount(&mock_server)
@@ -77,10 +79,7 @@ async fn test_fetch_redirect() {
 
     Mock::given(method("GET"))
         .and(path("/redirect"))
-        .respond_with(
-            ResponseTemplate::new(302)
-                .insert_header("location", "/final")
-        )
+        .respond_with(ResponseTemplate::new(302).insert_header("location", "/final"))
         .mount(&mock_server)
         .await;
 
@@ -89,7 +88,7 @@ async fn test_fetch_redirect() {
         .respond_with(
             ResponseTemplate::new(200)
                 .set_body_bytes("<html><body>Final page</body></html>".as_bytes())
-                .insert_header("Content-Type", "text/html")
+                .insert_header("Content-Type", "text/html"),
         )
         .mount(&mock_server)
         .await;
@@ -104,12 +103,13 @@ async fn test_fetch_redirect() {
 
 #[tokio::test]
 async fn test_fetch_gzip_compression() {
-    use std::io::Write;
-    use flate2::write::GzEncoder;
     use flate2::Compression;
+    use flate2::write::GzEncoder;
+    use std::io::Write;
 
-    let original_content = "<html><head><title>Compressed</title></head><body>This content is gzipped!</body></html>";
-    
+    let original_content =
+        "<html><head><title>Compressed</title></head><body>This content is gzipped!</body></html>";
+
     // Gzip the content
     let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
     encoder.write_all(original_content.as_bytes()).unwrap();
@@ -205,12 +205,24 @@ async fn test_error_retry_classification() {
     assert!(!FetchError::BodyTooLarge(1000).should_retry());
     assert!(!FetchError::UnsupportedContentType("image/png".to_string()).should_retry());
     assert!(!FetchError::Charset("Invalid encoding".to_string()).should_retry());
-    
+
     assert!(FetchError::Dns("DNS failure".to_string()).should_retry());
     assert!(FetchError::ConnectTimeout.should_retry());
     assert!(FetchError::RequestTimeout.should_retry());
-    
+
     // HTTP errors
-    assert!(!FetchError::Http { status: reqwest::StatusCode::NOT_FOUND, retriable: false }.should_retry());
-    assert!(FetchError::Http { status: reqwest::StatusCode::INTERNAL_SERVER_ERROR, retriable: true }.should_retry());
+    assert!(
+        !FetchError::Http {
+            status: reqwest::StatusCode::NOT_FOUND,
+            retriable: false
+        }
+        .should_retry()
+    );
+    assert!(
+        FetchError::Http {
+            status: reqwest::StatusCode::INTERNAL_SERVER_ERROR,
+            retriable: true
+        }
+        .should_retry()
+    );
 }

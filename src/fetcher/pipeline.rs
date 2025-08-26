@@ -1,19 +1,20 @@
-use crate::fetcher::{errors::FetchError, types::{Charset, PageResponse}};
+use crate::fetcher::{
+    errors::FetchError,
+    types::{Charset, PageResponse},
+};
 use bytes::Bytes;
 use chrono::Utc;
 use encoding_rs::Encoding;
 use regex::Regex;
-use reqwest::{header::HeaderMap, StatusCode};
+use reqwest::{StatusCode, header::HeaderMap};
 use std::sync::LazyLock;
 use url::Url;
 
-static CHARSET_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)charset\s*=\s*["']?([^"'\s;]+)"#).unwrap()
-});
+static CHARSET_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)charset\s*=\s*["']?([^"'\s;]+)"#).unwrap());
 
-static META_CHARSET_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r#"(?i)<meta\s+[^>]*?charset\s*=\s*["']?([^"'\s/>]+)"#).unwrap()
-});
+static META_CHARSET_REGEX: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r#"(?i)<meta\s+[^>]*?charset\s*=\s*["']?([^"'\s/>]+)"#).unwrap());
 
 static META_HTTP_EQUIV_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r#"(?i)<meta\s+[^>]*?http-equiv\s*=\s*["']?content-type["']?[^>]*?content\s*=\s*["']?[^"'>]*?charset\s*=\s*([^"'\s;/>]+)"#).unwrap()
@@ -91,14 +92,11 @@ fn decode_to_utf8(body_bytes: &[u8], charset: &Charset) -> Result<String, FetchE
         Charset::ShiftJis => encoding_rs::SHIFT_JIS,
         Charset::Gb2312 => encoding_rs::GBK,
         Charset::Big5 => encoding_rs::BIG5,
-        Charset::Other(name) => {
-            Encoding::for_label(name.as_bytes())
-                .unwrap_or(encoding_rs::UTF_8)
-        }
+        Charset::Other(name) => Encoding::for_label(name.as_bytes()).unwrap_or(encoding_rs::UTF_8),
     };
 
     let (decoded, _encoding, had_errors) = encoding.decode(body_bytes);
-    
+
     if had_errors {
         return Err(FetchError::Charset(format!(
             "Failed to decode content with encoding: {}",
@@ -117,7 +115,7 @@ mod tests {
     fn test_detect_charset_from_content_type() {
         let content_type = "text/html; charset=utf-8";
         let body = b"<html><head><title>Test</title></head></html>";
-        
+
         let charset = detect_charset(content_type, body).unwrap();
         assert!(matches!(charset, Charset::Utf8));
     }
@@ -126,7 +124,7 @@ mod tests {
     fn test_detect_charset_from_meta_tag() {
         let content_type = "text/html";
         let body = b"<html><head><meta charset=\"iso-8859-1\"><title>Test</title></head></html>";
-        
+
         let charset = detect_charset(content_type, body).unwrap();
         // ISO-8859-1 gets mapped to Windows1252 by encoding_rs since it's a superset
         assert!(matches!(charset, Charset::Windows1252));
@@ -136,7 +134,7 @@ mod tests {
     fn test_detect_charset_from_meta_http_equiv() {
         let content_type = "text/html";
         let body = b"<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=windows-1252\"><title>Test</title></head></html>";
-        
+
         let charset = detect_charset(content_type, body).unwrap();
         assert!(matches!(charset, Charset::Windows1252));
     }
@@ -145,7 +143,7 @@ mod tests {
     fn test_decode_utf8() {
         let body = "Hello, 世界!".as_bytes();
         let charset = Charset::Utf8;
-        
+
         let decoded = decode_to_utf8(body, &charset).unwrap();
         assert_eq!(decoded, "Hello, 世界!");
     }
