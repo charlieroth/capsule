@@ -25,7 +25,7 @@ impl JobHandler for FetchPageJobHandler {
         let payload: FetchPagePayload = serde_json::from_value(payload)?;
 
         // Record item_id in the span
-        span.record("item_id", &tracing::field::display(payload.item_id));
+        span.record("item_id", tracing::field::display(payload.item_id));
 
         // Get the item URL with a lock to prevent concurrent processing
         let item_url: Option<String> = sqlx::query_scalar!(

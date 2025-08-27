@@ -43,38 +43,35 @@ pub fn process_response(
 
 fn detect_charset(content_type: &str, body_bytes: &[u8]) -> Result<Charset, FetchError> {
     // 1. Check Content-Type header for charset
-    if let Some(captures) = CHARSET_REGEX.captures(content_type) {
-        if let Some(charset_str) = captures.get(1) {
+    if let Some(captures) = CHARSET_REGEX.captures(content_type)
+        && let Some(charset_str) = captures.get(1) {
             let charset_name = charset_str.as_str().to_lowercase();
             if let Some(encoding) = Encoding::for_label(charset_name.as_bytes()) {
                 return Ok(Charset::from_encoding(encoding));
             }
         }
-    }
 
     // 2. Check for <meta charset> in first 4KB
     let search_bytes = &body_bytes[..body_bytes.len().min(4096)];
     let search_str = String::from_utf8_lossy(search_bytes);
 
     // Look for <meta charset="...">
-    if let Some(captures) = META_CHARSET_REGEX.captures(&search_str) {
-        if let Some(charset_str) = captures.get(1) {
+    if let Some(captures) = META_CHARSET_REGEX.captures(&search_str)
+        && let Some(charset_str) = captures.get(1) {
             let charset_name = charset_str.as_str().to_lowercase();
             if let Some(encoding) = Encoding::for_label(charset_name.as_bytes()) {
                 return Ok(Charset::from_encoding(encoding));
             }
         }
-    }
 
     // Look for <meta http-equiv="Content-Type" content="...; charset=...">
-    if let Some(captures) = META_HTTP_EQUIV_REGEX.captures(&search_str) {
-        if let Some(charset_str) = captures.get(1) {
+    if let Some(captures) = META_HTTP_EQUIV_REGEX.captures(&search_str)
+        && let Some(charset_str) = captures.get(1) {
             let charset_name = charset_str.as_str().to_lowercase();
             if let Some(encoding) = Encoding::for_label(charset_name.as_bytes()) {
                 return Ok(Charset::from_encoding(encoding));
             }
         }
-    }
 
     // 3. Use chardet for heuristic detection
     let mut detector = chardetng::EncodingDetector::new();

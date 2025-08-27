@@ -42,11 +42,10 @@ pub async fn fetch(url: &str) -> Result<PageResponse, FetchError> {
         .map_err(FetchError::from_reqwest_error)?;
 
     // Check content length before downloading
-    if let Some(content_length) = response.content_length() {
-        if content_length > MAX_BODY_SIZE {
+    if let Some(content_length) = response.content_length()
+        && content_length > MAX_BODY_SIZE {
             return Err(FetchError::BodyTooLarge(content_length));
         }
-    }
 
     let final_url = response.url().clone();
     let status = response.status();
