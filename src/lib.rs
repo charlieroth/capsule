@@ -2,6 +2,7 @@ pub mod app_state;
 pub mod auth;
 pub mod config;
 pub mod entities;
+pub mod fetcher;
 pub mod health;
 pub mod items;
 pub mod jobs;
