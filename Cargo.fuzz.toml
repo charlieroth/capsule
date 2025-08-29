@@ -1,0 +1,21 @@
+[package]
+name = "capsule-fuzz"
+version = "0.0.0"
+authors = ["Automatically generated"]
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+capsule = { path = ".." }
+bytes = "1.5"
+chrono = "0.4"
+reqwest = "0.12"
+url = "2.5"
+
+[[bin]]
+name = "extractor"
+path = "fuzz_targets/extractor.rs"
