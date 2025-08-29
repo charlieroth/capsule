@@ -90,7 +90,7 @@ mod tests {
     fn test_reject_empty_title_low_words() {
         let short_text = "Just a few words here";
         assert!(should_reject("", short_text));
-        
+
         // With a good title, longer text should be accepted
         let longer_text = "This technology discussion provides valuable information about modern software development practices and methodologies that developers can apply to their projects. It includes detailed explanations and practical examples to help readers understand complex concepts in a straightforward manner.";
         assert!(!should_reject("Good Title", longer_text));

@@ -26,11 +26,11 @@ pub struct ReadabilityResult {
 pub fn normalize_whitespace(text: &str) -> String {
     // First preserve intentional line breaks and normalize spaces
     let text = text.trim();
-    
+
     // Replace multiple spaces/tabs with single space
     let space_regex = regex::Regex::new(r"[ \t]+").unwrap();
     let spaced = space_regex.replace_all(text, " ");
-    
+
     // Convert multiple consecutive newlines to double newlines
     let newline_regex = regex::Regex::new(r"\n\s*\n+").unwrap();
     newline_regex.replace_all(&spaced, "\n\n").to_string()

@@ -11,7 +11,8 @@ pub fn detect_language(text: &str) -> Option<String> {
 
     // Use whatlang for detection
     if let Some(info) = detect(text)
-        && info.confidence() >= MIN_CONFIDENCE {
+        && info.confidence() >= MIN_CONFIDENCE
+    {
         return Some(lang_to_code(info.lang()));
     }
 

@@ -96,7 +96,7 @@ pub async fn auth_middleware(req: Request, next: Next) -> Response {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{app_state::AppState, repositories::user::MockUserRepositoryTrait, config::Config};
+    use crate::{app_state::AppState, config::Config, repositories::user::MockUserRepositoryTrait};
     use axum::{
         Json, Router,
         body::to_bytes,

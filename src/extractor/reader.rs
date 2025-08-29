@@ -22,14 +22,15 @@ pub fn extract(html: &str, url: Url) -> Option<ReadabilityResult> {
 
 fn extract_site_name(html: &str) -> Option<String> {
     let document = Html::parse_document(html);
-    
+
     // Try og:site_name first
     let selector = Selector::parse("meta[property='og:site_name']").ok()?;
     if let Some(element) = document.select(&selector).next()
-        && let Some(content) = element.value().attr("content") {
+        && let Some(content) = element.value().attr("content")
+    {
         return Some(content.to_string());
     }
-    
+
     // Try site name from title
     let title_selector = Selector::parse("title").ok()?;
     if let Some(element) = document.select(&title_selector).next() {
@@ -42,23 +43,23 @@ fn extract_site_name(html: &str) -> Option<String> {
             return Some(title[pos + 3..].to_string());
         }
     }
-    
+
     None
 }
 
 fn fallback_extract(html: &str) -> Option<ReadabilityResult> {
     let document = Html::parse_document(html);
-    
+
     // Extract title
     let title = extract_title(&document)?;
-    
+
     // Extract main content using basic heuristics
     let (text, html_content) = extract_main_content(&document);
-    
+
     if text.trim().is_empty() {
         return None;
     }
-    
+
     Some(ReadabilityResult {
         title,
         site_name: extract_site_name(html),
@@ -77,7 +78,7 @@ fn extract_title(document: &Html) -> Option<String> {
             }
         }
     }
-    
+
     // Try regular title
     if let Ok(selector) = Selector::parse("title") {
         for element in document.select(&selector) {
@@ -87,7 +88,7 @@ fn extract_title(document: &Html) -> Option<String> {
             }
         }
     }
-    
+
     // Try h1
     if let Ok(selector) = Selector::parse("h1") {
         for element in document.select(&selector) {
@@ -97,14 +98,14 @@ fn extract_title(document: &Html) -> Option<String> {
             }
         }
     }
-    
+
     None
 }
 
 fn extract_main_content(document: &Html) -> (String, String) {
     let content_selectors = vec![
         "article",
-        "main", 
+        "main",
         "[role='main']",
         ".content",
         ".post",
@@ -113,26 +114,28 @@ fn extract_main_content(document: &Html) -> (String, String) {
         "#main",
         ".entry-content",
     ];
-    
+
     for selector_str in content_selectors {
         if let Ok(selector) = Selector::parse(selector_str) {
             for element in document.select(&selector) {
                 let text = element.text().collect::<String>();
                 let html = element.html();
-                if text.trim().len() > 100 { // Basic length check
+                if text.trim().len() > 100 {
+                    // Basic length check
                     return (text, html);
                 }
             }
         }
     }
-    
+
     // Last resort: try body but exclude common boilerplate elements
     if let Ok(body_selector) = Selector::parse("body")
-        && let Some(body) = document.select(&body_selector).next() {
+        && let Some(body) = document.select(&body_selector).next()
+    {
         let text = body.text().collect::<String>();
         let html = body.html();
         return (text, html);
     }
-    
+
     (String::new(), String::new())
 }
