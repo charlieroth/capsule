@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO contents\n                  (item_id, clean_html, clean_text, lang, extracted_at, checksum)\n            VALUES ($1,       $2,         $3,         $4,   $5,          $6)\n            ON CONFLICT (item_id) DO UPDATE\n              SET clean_html   = EXCLUDED.clean_html,\n                  clean_text   = EXCLUDED.clean_text,\n                  lang         = EXCLUDED.lang,\n                  extracted_at = EXCLUDED.extracted_at,\n                  checksum     = EXCLUDED.checksum\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Varchar",
+        "Timestamptz",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "bd06bbdb54b71e6325a55ac793d08f9848e00da22002f923aa74e021c6d60361"
+}

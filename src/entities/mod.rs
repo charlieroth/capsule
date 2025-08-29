@@ -49,8 +49,10 @@ pub struct Item {
 #[derive(Debug, Clone, FromRow)]
 pub struct Content {
     pub item_id: Uuid, // PK and FK -> items.id
-    pub html: Option<String>,
-    pub text: Option<String>,
+    pub raw_html: Option<String>,
+    pub raw_text: Option<String>,
+    pub clean_html: Option<String>,
+    pub clean_text: Option<String>,
     pub lang: Option<String>,
     pub extracted_at: Option<DateTime<Utc>>,
     pub checksum: Option<String>,

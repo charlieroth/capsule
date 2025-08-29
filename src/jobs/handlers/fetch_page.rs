@@ -61,11 +61,11 @@ impl JobHandler for FetchPageJobHandler {
                 // Insert the content
                 sqlx::query!(
                     r#"
-                    INSERT INTO contents (item_id, html, text, lang, extracted_at, checksum)
+                    INSERT INTO contents (item_id, raw_html, raw_text, lang, extracted_at, checksum)
                     VALUES ($1, $2, NULL, NULL, NOW(), $3)
                     ON CONFLICT (item_id) 
                     DO UPDATE SET 
-                        html = EXCLUDED.html,
+                        raw_html = EXCLUDED.raw_html,
                         extracted_at = EXCLUDED.extracted_at,
                         checksum = EXCLUDED.checksum
                     "#,
