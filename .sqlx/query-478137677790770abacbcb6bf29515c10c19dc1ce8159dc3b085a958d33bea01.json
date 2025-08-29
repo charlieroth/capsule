@@ -1,0 +1,64 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT item_id, raw_html, raw_text, clean_html, clean_text, lang, extracted_at, checksum\n             FROM contents WHERE item_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "item_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "raw_html",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "raw_text",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "clean_html",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "clean_text",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "lang",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 6,
+        "name": "extracted_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "checksum",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "478137677790770abacbcb6bf29515c10c19dc1ce8159dc3b085a958d33bea01"
+}

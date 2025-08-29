@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                    INSERT INTO contents (item_id, raw_html, raw_text, lang, extracted_at, checksum)\n                    VALUES ($1, $2, NULL, NULL, NOW(), $3)\n                    ON CONFLICT (item_id) \n                    DO UPDATE SET \n                        raw_html = EXCLUDED.raw_html,\n                        extracted_at = EXCLUDED.extracted_at,\n                        checksum = EXCLUDED.checksum\n                    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "539f78138e8f32fc487a5814bbe028114900c24ad51ceecee9ee252ea58d5e5b"
+}
